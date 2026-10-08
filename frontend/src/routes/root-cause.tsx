@@ -19,7 +19,7 @@ function RootCause() {
   const q = useQuery({ queryKey: ["rca"], queryFn: api.rca });
   return (
     <>
-      <PageHeader step="Step 2 · Understand" title="Root cause analysis" description="Why your numbers changed, ranked by impact." />
+      <PageHeader title="Root cause analysis" description="Why your numbers changed, ranked by impact." />
       <QueryState q={q}>{(d) => (
         <>
           <div className="grid gap-6 lg:grid-cols-2">
@@ -82,7 +82,6 @@ function RootCause() {
           </div>
         </>
       )}</QueryState>
-      <NextStep to="/recommendations" label="Decide what to do" description="Get recommended actions ranked by expected impact." />
     </>
   );
 }

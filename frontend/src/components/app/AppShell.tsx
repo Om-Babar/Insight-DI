@@ -9,19 +9,23 @@ import { SeverityIcon } from "./primitives";
 import { timeAgo } from "@/lib/format";
 
 const nav = [
+  { group: "Data", items: [
+    { to: "/data-sources", label: "Data Sources", Icon: Database },
+  ] },
   { group: "Monitor", items: [
     { to: "/", label: "Overview", Icon: LayoutDashboard },
-    { to: "/data-sources", label: "Data Sources", Icon: Database },
     { to: "/analytics", label: "Business Analytics", Icon: BarChart3 },
   ] },
   { group: "Understand", items: [
     { to: "/forecasting", label: "Forecasting", Icon: TrendingUp },
-    { to: "/competition", label: "Competitive Intel", Icon: Swords },
-    { to: "/root-cause", label: "Root Cause", Icon: Search },
+    { to: "/competition", label: "Competitive Intelligence", Icon: Swords },
+    { to: "/root-cause", label: "Root Cause Analysis", Icon: Search },
   ] },
   { group: "Act", items: [
     { to: "/recommendations", label: "Recommendations", Icon: Lightbulb },
     { to: "/simulation", label: "What-If Simulation", Icon: FlaskConical },
+  ] },
+  { group: "Assist", items: [
     { to: "/copilot", label: "AI Copilot", Icon: Bot },
     { to: "/reports", label: "Reports", Icon: FileText },
   ] },

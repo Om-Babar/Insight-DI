@@ -23,7 +23,7 @@ function Forecasting() {
   const q = useQuery({ queryKey: ["forecast", horizon, model], queryFn: () => api.forecast(horizon, model) });
   return (
     <>
-      <PageHeader step="Step 2 · Understand" title="Forecasting" description="What revenue to expect, with a likely range."
+      <PageHeader title="Forecasting" description="What revenue to expect, with a likely range."
         actions={<>
           <Select value={String(horizon)} onValueChange={(v) => setHorizon(Number(v))}><SelectTrigger className="w-32"><SelectValue /></SelectTrigger><SelectContent>{[7, 30, 60, 90].map((h) => <SelectItem key={h} value={String(h)}>Next {h} days</SelectItem>)}</SelectContent></Select>
           <Select value={model} onValueChange={setModel}><SelectTrigger className="w-36"><SelectValue /></SelectTrigger><SelectContent>{["auto", "prophet", "xgboost", "arima"].map((m) => <SelectItem key={m} value={m}>{m === "auto" ? "Best model" : m.toUpperCase()}</SelectItem>)}</SelectContent></Select>
@@ -58,7 +58,6 @@ function Forecasting() {
           </Panel>
         </>
       )}</QueryState>
-      <NextStep to="/competition" label="Check the competition" description="See how your prices compare on Amazon and Flipkart." />
     </>
   );
 }

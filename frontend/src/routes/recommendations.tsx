@@ -30,7 +30,7 @@ function Recs() {
   });
   return (
     <>
-      <PageHeader step="Step 3 · Act" title="Recommendations" description="What to do next, ranked by priority and expected impact."
+      <PageHeader title="Recommendations" description="What to do next, ranked by priority and expected impact."
         actions={<Tabs value={filter} onValueChange={(v) => setFilter(v as typeof filter)}><TabsList><TabsTrigger value="open">Open</TabsTrigger><TabsTrigger value="accepted">Accepted</TabsTrigger><TabsTrigger value="dismissed">Dismissed</TabsTrigger><TabsTrigger value="all">All</TabsTrigger></TabsList></Tabs>} />
       <QueryState q={q} empty={(d) => !d.length}>{(d) => {
         const list = d.filter((r) => filter === "all" || r.status === filter);
@@ -53,7 +53,6 @@ function Recs() {
           ))}</div>
         );
       }}</QueryState>
-      <NextStep to="/simulation" label="Test before you act" description="Simulate price, discount and ad spend changes." />
     </>
   );
 }

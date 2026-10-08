@@ -33,7 +33,7 @@ function Simulation() {
   const r = sim.data;
   return (
     <>
-      <PageHeader step="Step 3 · Act" title="What-if simulation" description="Try changes safely and see the expected outcome before acting." />
+      <PageHeader title="What-if simulation" description="Try changes safely and see the expected outcome before acting." />
       <div className="grid gap-6 lg:grid-cols-3">
         <Panel title="Your levers">
           <div className="space-y-6">
@@ -73,7 +73,6 @@ function Simulation() {
           )}
         </div>
       </div>
-      <NextStep to="/copilot" label="Ask the AI copilot" description="Ask any question about your business in plain language." />
     </>
   );
 }

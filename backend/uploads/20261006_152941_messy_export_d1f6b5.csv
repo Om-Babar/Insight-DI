@@ -1,0 +1,5 @@
+cust_no,signup_date,town,province,user_segment,payment_pref
+CUST_d1f6b5_1,2024-01-15,Pune,Maharashtra,Loyal Regular,UPI
+CUST_d1f6b5_2,2024-02-20,Jaipur,Rajasthan,Occasional,Credit Card
+CUST_d1f6b5_3,,Ahmedabad,Gujarat,,Cash on Delivery
+CUST_d1f6b5_2,2024-02-20,Jaipur,Rajasthan,Occasional,Credit Card

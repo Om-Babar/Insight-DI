@@ -29,7 +29,7 @@ function Copilot() {
   const onSubmit = (e: FormEvent) => { e.preventDefault(); send(text); };
   return (
     <>
-      <PageHeader step="Step 3 · Act" title="AI copilot" description="Ask anything about your business in plain language." />
+      <PageHeader title="AI copilot" description="Ask anything about your business in plain language." />
       <div className="surface flex h-[calc(100vh-14rem)] min-h-[480px] flex-col">
         <div className="flex-1 space-y-5 overflow-y-auto p-5">
           {!msgs.length && (

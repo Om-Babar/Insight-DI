@@ -44,7 +44,7 @@ function DataSources() {
   };
   return (
     <>
-      <PageHeader step="Step 0 · Connect" title="Data sources" description="Upload your business files. We'll detect what they are, check quality and map the columns." />
+      <PageHeader title="Data sources" description="Upload your business files. We'll detect what they are, check quality and map the columns." />
       {!profile && (
         <div onDragOver={(e) => { e.preventDefault(); setDrag(true); }} onDragLeave={() => setDrag(false)} onDrop={(e) => { e.preventDefault(); setDrag(false); pick(e.dataTransfer.files[0]); }}
           className={`surface flex flex-col items-center justify-center gap-3 border-2 border-dashed p-10 text-center ${drag ? "border-analytics bg-analytics-soft" : "border-border"}`}>
@@ -105,7 +105,6 @@ function DataSources() {
           </table></div>
         )}</QueryState>
       </Panel>
-      <NextStep to="/" label="Back to your overview" description="See how your business looks with the latest data." />
     </>
   );
 }

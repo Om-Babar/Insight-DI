@@ -26,7 +26,7 @@ function Competition() {
   const refresh = useMutation({ mutationFn: api.refreshCompetition, onSuccess: () => { toast.success("Price collection started"); qc.invalidateQueries({ queryKey: ["competition"] }); }, onError: (e) => toast.error((e as Error).message) });
   return (
     <>
-      <PageHeader step="Step 2 · Understand" title="Competitive intelligence" description="How your products stack up on Amazon and Flipkart."
+      <PageHeader title="Competitive intelligence" description="How your products stack up on Amazon and Flipkart."
         actions={<Button onClick={() => refresh.mutate()} disabled={refresh.isPending}><RefreshCw className={refresh.isPending ? "size-4 animate-spin" : "size-4"} /> Refresh prices</Button>} />
       <QueryState q={q} empty={(d) => !d.products.length}>{(d) => {
         const sel = d.products.find((p) => p.sku === sku) ?? d.products[0]!;
@@ -69,7 +69,6 @@ function Competition() {
           </>
         );
       }}</QueryState>
-      <NextStep to="/root-cause" label="Find out why" description="Discover what is driving changes in your numbers." />
     </>
   );
 }

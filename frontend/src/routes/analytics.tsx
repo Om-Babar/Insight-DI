@@ -30,7 +30,7 @@ function Analytics() {
   const q = useQuery({ queryKey: ["analytics", section, range], queryFn: () => api.analytics(section, range) });
   return (
     <>
-      <PageHeader step="Step 1 · Monitor" title="Business analytics" description="Explore performance across every part of the business."
+      <PageHeader title="Business analytics" description="Explore performance across every part of the business."
         actions={<Select value={range} onValueChange={setRange}><SelectTrigger className="w-36"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="7d">Last 7 days</SelectItem><SelectItem value="30d">Last 30 days</SelectItem><SelectItem value="90d">Last 90 days</SelectItem></SelectContent></Select>} />
       <Tabs value={section} onValueChange={(v) => setSection(v as AnalyticsSection)} className="mb-6">
         <TabsList className="flex-wrap">{sections.map((s) => <TabsTrigger key={s.v} value={s.v}>{s.l}</TabsTrigger>)}</TabsList>
@@ -74,7 +74,6 @@ function Analytics() {
           </div>
         )}</QueryState>
       </Panel>
-      <NextStep to="/forecasting" label="See what's coming" description="Forecast demand and revenue for the weeks ahead." />
     </>
   );
 }
