@@ -288,9 +288,10 @@ export const profile = (file: File): T.DatasetProfile => ({
 });
 
 export const history = (): T.UploadHistoryItem[] => [
-  { id: "h1", filename: "orders_sep_2026.csv", detected_type: "Sales orders", rows: 11820, quality_score: 91, status: "ingested", uploaded_at: ago(60 * 24 * 6) },
-  { id: "h2", filename: "inventory_snapshot.xlsx", detected_type: "Inventory", rows: 48, quality_score: 97, status: "ingested", uploaded_at: ago(60 * 24 * 2) },
-  { id: "h3", filename: "ad_campaigns.json", detected_type: "Marketing", rows: 312, quality_score: 74, status: "pending_review", uploaded_at: ago(60 * 5) },
+  { id: "h1", filename: "orders_sep_2026.csv", detected_type: "Sales / Orders", rows: 11820, quality_score: 91, status: "ingested", uploaded_at: ago(60 * 24 * 6), data_coverage: "1 Sep – 30 Sep 2026", last_processed_at: ago(60 * 24 * 6 - 5), impact_modules: ["Business Analytics", "Forecasting", "RCA", "Recommendations"] },
+  { id: "h2", filename: "inventory_snapshot.xlsx", detected_type: "Inventory", rows: 48, quality_score: 97, status: "ingested", uploaded_at: ago(60 * 24 * 2), data_coverage: "Current Stock · Oct 2026", last_processed_at: ago(60 * 24 * 2 - 3), impact_modules: ["Business Analytics", "Forecasting", "What-If Simulation"] },
+  { id: "h3", filename: "ad_campaigns.json", detected_type: "Marketing", rows: 312, quality_score: 74, status: "pending_review", uploaded_at: ago(60 * 5), data_coverage: "15 Aug – 5 Oct 2026", last_processed_at: ago(60 * 4), impact_modules: ["Business Analytics", "RCA"] },
+  { id: "h4", filename: "imdb_movies_top100.csv", detected_type: "Unsupported", rows: 1450, quality_score: 18, status: "rejected", uploaded_at: ago(60 * 24 * 1), data_coverage: "N/A", last_processed_at: ago(60 * 24 * 1), rejection_reason: "Dataset rejected: No supported E-commerce business structure detected." },
 ];
 
 export const reports = (): T.ReportItem[] => [

@@ -198,12 +198,20 @@ export interface DatasetProfile {
 
 export interface UploadHistoryItem {
   id: string;
+  upload_id?: number | string;
   filename: string;
   detected_type: string;
+  file_type?: string;
   rows: number;
+  row_count?: number;
+  column_count?: number;
   quality_score: number;
-  status: "ingested" | "processing" | "failed" | "pending_review";
+  status: "ingested" | "processing" | "failed" | "pending_review" | "rejected";
   uploaded_at: string;
+  data_coverage?: string;
+  last_processed_at?: string;
+  impact_modules?: string[];
+  rejection_reason?: string;
 }
 
 export interface ReportItem {
