@@ -67,7 +67,103 @@ export const api = {
     const path = model === "arima" ? "/api/v1/forecast/timeseries" : "/api/v1/forecast/revenue";
     const method = model === "arima" ? "GET" : "POST";
     const body = model === "arima" ? undefined : JSON.stringify({ horizon_days: horizon, model_type: model });
-    return request<T.ForecastData>(`${path}${qs(model === "arima" ? { horizon } : {})}`, { method, body }, () => preview.forecast(horizon, model));
+    return request<T.ForecastData>(
+      `${path}${qs(model === "arima" ? { horizon } : {})}`,
+      { method, body },
+      () => preview.forecast(horizon, model),
+      (d: any): T.ForecastData => {
+        if (d.series && d.expected_total !== undefined && !d.forecast) return d;
+
+        const histPoints = d.historical_points || (d.historical_last_30_days || []).map((p: any) => ({
+          date: p.order_date || p.date,
+          actual: p.revenue ?? p.actual ?? p.daily_revenue,
+        }));
+
+        const series: T.TrendPoint[] = histPoints.map((p: any) => ({
+          date: String(p.date),
+          actual: typeof p.actual === "number" ? p.actual : null,
+          forecast: null,
+          lower: null,
+          upper: null,
+        }));
+
+        const forecastPoints = (d.forecast || []).map((p: any) => ({
+          date: String(p.date),
+          actual: null,
+          forecast: typeof p.predicted_value === "number" ? p.predicted_value : null,
+          lower: typeof p.lower_bound === "number" ? p.lower_bound : null,
+          upper: typeof p.upper_bound === "number" ? p.upper_bound : null,
+        }));
+
+        if (series.length > 0 && forecastPoints.length > 0) {
+          const lastHist = series[series.length - 1]!;
+          lastHist.forecast = lastHist.actual;
+          lastHist.lower = lastHist.actual;
+          lastHist.upper = lastHist.actual;
+        }
+
+        const combinedSeries = [...series, ...forecastPoints];
+
+        const models: T.ModelScore[] = (d.benchmarks || []).map((m: any) => {
+          const isSelected =
+            d.model_name?.toLowerCase().includes(m.model_name?.toLowerCase().split(" ")[0] || "") ||
+            (d.evaluation && d.evaluation.model_name === m.model_name);
+          return {
+            model: m.model_name,
+            mape: m.mape ?? m.relative_error_pct ?? 0,
+            rmse: m.rmse ?? 0,
+            r2: m.r2_score ?? 0,
+            mae: m.mae ?? 0,
+            test_days: m.test_days ?? 0,
+            selected: isSelected,
+          };
+        });
+
+        if (models.length === 0 && d.evaluation) {
+          models.push({
+            model: d.evaluation.model_name,
+            mape: d.evaluation.mape ?? d.evaluation.relative_error_pct ?? 0,
+            rmse: d.evaluation.rmse ?? 0,
+            r2: d.evaluation.r2_score ?? 0,
+            mae: d.evaluation.mae ?? 0,
+            test_days: d.evaluation.test_days ?? 0,
+            selected: true,
+          });
+        }
+
+        const fallbackSummary = d.insights?.[0]?.description ||
+          `Projected revenue of ₹${(d.total_projected_revenue ?? 0).toLocaleString("en-IN")} over the next ${d.horizon_days || horizon} days.`;
+
+        const latestActualDate = d.latest_actual_date || d.data_freshness_date || histPoints[histPoints.length - 1]?.date || "";
+        const forecastStartDate = d.forecast_start_date || forecastPoints[0]?.date || "";
+        const forecastEndDate = d.forecast_end_date || forecastPoints[forecastPoints.length - 1]?.date || "";
+
+        return {
+          model: d.model_name || "XGBoost Regressor",
+          horizon_days: d.horizon_days || horizon,
+          generated_at: d.generated_at || new Date().toISOString(),
+          data_freshness_date: d.data_freshness_date || latestActualDate,
+          latest_actual_date: latestActualDate,
+          forecast_start_date: forecastStartDate,
+          forecast_end_date: forecastEndDate,
+          previous_period_start_date: d.previous_period_start_date || "",
+          previous_period_end_date: d.previous_period_end_date || "",
+          is_data_stale: d.is_data_stale ?? true,
+          data_stale_days: d.data_stale_days ?? 0,
+          summary: fallbackSummary,
+          series: combinedSeries,
+          models,
+          expected_total: d.total_projected_revenue ?? 0,
+          expected_change_pct: d.expected_change_pct ?? 0,
+          expected_change_abs: d.expected_change_abs ?? 0,
+          previous_period_revenue: d.previous_period_revenue ?? 0,
+          total_lower_bound: d.total_lower_bound ?? 0,
+          total_upper_bound: d.total_upper_bound ?? 0,
+          insights: d.insights || [],
+          historical_start_date: histPoints[0]?.date,
+        };
+      }
+    );
   },
   
   competition: () => request<T.CompetitionData>("/api/v1/competitors/benchmark", undefined, preview.competition),

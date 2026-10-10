@@ -35,21 +35,48 @@ class ModelEvaluationMetrics(BaseModel):
     mae: float
     rmse: float
     relative_error_pct: float
+    mape: float = 0.0
     test_days: int
+
+
+class BusinessForecastInsight(BaseModel):
+    category: str  # "trajectory", "pattern", "implication", "action"
+    title: str
+    description: str
+    action_label: Optional[str] = None
+    action_route: Optional[str] = None
+    tone: str = "neutral"  # "positive", "neutral", "warning", "info"
 
 
 class RevenueForecastRequest(BaseModel):
     horizon_days: int = Field(30, ge=7, le=90)
-    model_type: str = Field("xgboost", pattern="^(xgboost|random_forest|arima)$")
+    model_type: str = Field("xgboost", pattern="^(auto|xgboost|random_forest|arima)$")
 
 
 class RevenueForecastResponse(BaseModel):
     model_name: str
     horizon_days: int
     total_projected_revenue: float
+    previous_period_revenue: float = 0.0
+    expected_change_pct: float = 0.0
+    expected_change_abs: float = 0.0
+    total_lower_bound: float = 0.0
+    total_upper_bound: float = 0.0
     forecast: List[ForecastPredictionPoint]
     evaluation: ModelEvaluationMetrics
     historical_last_30_days: List[Dict[str, Any]]
+    historical_points: List[Dict[str, Any]] = []
+    benchmarks: List[ModelEvaluationMetrics] = []
+    generated_at: str = ""
+    data_freshness_date: str = ""
+    latest_actual_date: str = ""
+    forecast_start_date: str = ""
+    forecast_end_date: str = ""
+    previous_period_start_date: str = ""
+    previous_period_end_date: str = ""
+    is_data_stale: bool = False
+    data_stale_days: int = 0
+    insights: List[BusinessForecastInsight] = []
 
 
 class ModelBenchmarkComparison(BaseModel):

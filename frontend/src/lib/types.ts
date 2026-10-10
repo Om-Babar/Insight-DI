@@ -72,23 +72,48 @@ export interface AnalyticsData {
   table: { columns: { key: string; label: string; unit?: "currency" | "number" | "percent" }[]; rows: Record<string, string | number>[] };
 }
 
+export interface ForecastInsight {
+  category: "trajectory" | "pattern" | "implication" | "action";
+  title: string;
+  description: string;
+  action_label?: string;
+  action_route?: string;
+  tone: "positive" | "neutral" | "warning" | "info";
+}
+
 export interface ModelScore {
   model: string;
   mape: number;
   rmse: number;
   r2: number;
   selected: boolean;
+  mae?: number;
+  test_days?: number;
 }
 
 export interface ForecastData {
   model: string;
   horizon_days: number;
   generated_at: string;
+  data_freshness_date?: string;
+  latest_actual_date?: string;
+  forecast_start_date?: string;
+  forecast_end_date?: string;
+  previous_period_start_date?: string;
+  previous_period_end_date?: string;
+  is_data_stale?: boolean;
+  data_stale_days?: number;
   summary: string;
   series: TrendPoint[];
   models: ModelScore[];
   expected_total: number;
   expected_change_pct: number;
+  expected_change_abs: number;
+  previous_period_revenue: number;
+  total_lower_bound: number;
+  total_upper_bound: number;
+  insights: ForecastInsight[];
+  historical_start_date?: string;
 }
 
 export interface CompetitorListing {

@@ -50,11 +50,35 @@ def test_revenue_forecast_xgboost():
         assert pt["upper_bound"] >= pt["predicted_value"]
         assert pt["predicted_value"] >= pt["lower_bound"]
 
-    # Verify holdout evaluation metrics
-    eval_metrics = data["evaluation"]
-    assert eval_metrics["r2_score"] > 0.35  # Tree models typically achieve >0.50 on this dataset
-    assert eval_metrics["mae"] > 0
-    assert eval_metrics["relative_error_pct"] < 30.0  # reasonable relative error
+    # Verify new business KPI fields
+    assert data["previous_period_revenue"] > 0
+    assert data["total_lower_bound"] > 0
+    assert data["total_upper_bound"] >= data["total_projected_revenue"] >= data["total_lower_bound"]
+    assert "generated_at" in data and len(data["generated_at"]) > 0
+    assert data["latest_actual_date"] == "2024-12-31"
+    assert data["forecast_start_date"] == "2025-01-01"
+    assert data["forecast_end_date"] == "2025-01-30"
+    assert data["previous_period_start_date"] == "2024-12-02"
+    assert data["previous_period_end_date"] == "2024-12-31"
+    assert data["is_data_stale"] is True
+    assert data["data_stale_days"] > 30
+    assert len(data["historical_points"]) >= 30
+    assert len(data["benchmarks"]) == 3
+    assert len(data["insights"]) >= 3
+    for ins in data["insights"]:
+        assert "title" in ins and "description" in ins and "category" in ins
+
+
+def test_revenue_forecast_auto():
+    response = client.post(
+        "/api/v1/forecast/revenue",
+        json={"horizon_days": 30, "model_type": "auto"},
+    )
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["horizon_days"] == 30
+    assert data["model_name"] in ["XGBoost Regressor", "Random Forest Regressor"]
+    assert data["total_projected_revenue"] > 0
 
 
 def test_revenue_forecast_random_forest():

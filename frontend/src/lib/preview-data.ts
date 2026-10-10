@@ -212,32 +212,116 @@ export const analytics = (section: T.AnalyticsSection): T.AnalyticsData => {
 };
 
 export const forecast = (horizon: number, model: string): T.ForecastData => {
-  const hist = series(60, 82000, 9000);
-  const out: T.TrendPoint[] = hist.map((p) => ({ date: p.date, actual: p.v }));
-  let total = 0;
-  for (let i = 1; i <= horizon; i++) {
-    const f = wave(60 + i, 82000, 9000);
-    const w = 0.05 + i * 0.004;
-    total += f;
-    out.push({ date: iso(i), forecast: f, lower: Math.round(f * (1 - w)), upper: Math.round(f * (1 + w)) });
+  // Canonical dataset anchor: ends 2024-12-31
+  const baseEnd = new Date("2024-12-31T00:00:00Z");
+  const histDays = 60;
+  const out: T.TrendPoint[] = [];
+
+  for (let i = histDays - 1; i >= 0; i--) {
+    const d = new Date(baseEnd.getTime() - i * day);
+    const dateStr = d.toISOString().slice(0, 10);
+    const val = wave(histDays - i, 82000, 9000);
+    out.push({ date: dateStr, actual: val });
   }
-  const last = out[59]!;
-  last.forecast = last.lower = last.upper = last.actual ?? null;
+
+  let total = 0;
+  let lowerTotal = 0;
+  let upperTotal = 0;
+  const weekendVals: number[] = [];
+  const weekdayVals: number[] = [];
+
+  for (let i = 1; i <= horizon; i++) {
+    const d = new Date(baseEnd.getTime() + i * day);
+    const dateStr = d.toISOString().slice(0, 10);
+    const f = wave(histDays + i, 82000, 9000);
+    const w = 0.08 + i * 0.003;
+    const l = Math.max(10000, Math.round(f * (1 - w)));
+    const u = Math.round(f * (1 + w));
+    total += f;
+    lowerTotal += l;
+    upperTotal += u;
+    const dow = d.getUTCDay();
+    if (dow === 0 || dow === 6) {
+      weekendVals.push(f);
+    } else {
+      weekdayVals.push(f);
+    }
+    out.push({ date: dateStr, forecast: f, lower: l, upper: u });
+  }
+
+  const prevStart = new Date(baseEnd.getTime() - (horizon - 1) * day).toISOString().slice(0, 10);
+  const prevEnd = "2024-12-31";
+  const forecastStart = new Date(baseEnd.getTime() + 1 * day).toISOString().slice(0, 10);
+  const forecastEnd = new Date(baseEnd.getTime() + horizon * day).toISOString().slice(0, 10);
+
   const models: T.ModelScore[] = [
-    { model: "XGBoost", mape: 6.8, rmse: 5420, r2: 0.91, selected: false },
-    { model: "Random Forest", mape: 8.1, rmse: 6110, r2: 0.88, selected: false },
-    { model: "ARIMA", mape: 10.4, rmse: 7350, r2: 0.82, selected: false },
-    { model: "LSTM", mape: 7.5, rmse: 5790, r2: 0.89, selected: false },
-  ].map((m) => ({ ...m, selected: model === "auto" ? m.model === "XGBoost" : m.model === model }));
+    { model: "XGBoost Regressor", mape: 6.8, rmse: 5420, r2: 0.91, mae: 4210, test_days: 74, selected: false },
+    { model: "Random Forest Regressor", mape: 8.1, rmse: 6110, r2: 0.88, mae: 5040, test_days: 74, selected: false },
+    { model: "ARIMA (1,1,1)", mape: 10.4, rmse: 7350, r2: 0.82, mae: 6480, test_days: 74, selected: false },
+  ].map((m) => ({ ...m, selected: model === "auto" ? m.model.includes("XGBoost") : m.model.toLowerCase().includes(model.toLowerCase()) }));
+
+  const prevTotal = Math.round(total / 1.042);
+  const changeAbs = total - prevTotal;
+  const changePct = 4.2;
+
+  const wAvg = weekendVals.length ? Math.round(weekendVals.reduce((a, b) => a + b, 0) / weekendVals.length) : 0;
+  const dAvg = weekdayVals.length ? Math.round(weekdayVals.reduce((a, b) => a + b, 0) / weekdayVals.length) : 0;
+  const wLift = dAvg > 0 ? Number((((wAvg - dAvg) / dAvg) * 100).toFixed(1)) : 0;
+
+  const insights: T.ForecastInsight[] = [
+    {
+      category: "trajectory",
+      title: "Projected Revenue Expansion (+4.2%)",
+      description: `Revenue is projected to reach ₹${total.toLocaleString("en-IN")} over the upcoming ${horizon}-day period (${forecastStart} to ${forecastEnd}), an expected increase of ₹${changeAbs.toLocaleString("en-IN")} (+${changePct.toFixed(1)}%) versus the prior ${horizon}-day baseline (${prevStart} to ${prevEnd}, ₹${prevTotal.toLocaleString("en-IN")}). Estimated run-rate paces at ₹${Math.round(total / horizon).toLocaleString("en-IN")}/day.`,
+      tone: "positive",
+    },
+    {
+      category: "pattern",
+      title: "Intra-Week Variation & Projected Peak Days",
+      description: `Model predictions reflect intra-week demand variations: projected weekend daily revenue averages ₹${wAvg.toLocaleString("en-IN")} (${wLift >= 0 ? "+" : ""}${wLift}% compared to weekday average of ₹${dAvg.toLocaleString("en-IN")}/day).`,
+      tone: "info",
+    },
+    {
+      category: "implication",
+      title: "Inventory & Operational Readiness Review",
+      description: "Higher projected order activity around weekend dates indicates peak warehouse dispatch demand. Business owners should prudently review catalog stock coverage in Business Analytics → Inventory without making stockout assumptions solely from top-level revenue forecasts.",
+      action_label: "Review Inventory Status",
+      action_route: "/analytics?tab=inventory",
+      tone: "neutral",
+    },
+    {
+      category: "action",
+      title: "Scenario Testing & Revenue Driver Diagnostics",
+      description: "To test how pricing adjustments or marketing spend variations could alter this baseline revenue projection, run What-If Simulation. To investigate historical factors behind past performance, inspect Root Cause Analysis.",
+      action_label: "Run What-If Simulation",
+      action_route: "/simulation",
+      tone: "info",
+    },
+  ];
+
   return {
-    model: model === "auto" ? "XGBoost" : model,
+    model: model === "auto" ? "XGBoost Regressor" : model,
     horizon_days: horizon,
-    generated_at: ago(60),
-    summary: `Revenue is expected to grow about 6% over the next ${horizon} days, with a dip mid-period followed by a weekend peak.`,
+    generated_at: new Date().toISOString(),
+    data_freshness_date: "2024-12-31",
+    latest_actual_date: "2024-12-31",
+    forecast_start_date: forecastStart,
+    forecast_end_date: forecastEnd,
+    previous_period_start_date: prevStart,
+    previous_period_end_date: prevEnd,
+    is_data_stale: true,
+    data_stale_days: Math.floor((Date.now() - baseEnd.getTime()) / day),
+    summary: `Projected revenue of ₹${total.toLocaleString("en-IN")} over the upcoming ${horizon} days (${forecastStart} to ${forecastEnd}).`,
     series: out,
     models,
     expected_total: total,
-    expected_change_pct: 6.2,
+    expected_change_pct: changePct,
+    expected_change_abs: changeAbs,
+    previous_period_revenue: prevTotal,
+    total_lower_bound: lowerTotal,
+    total_upper_bound: upperTotal,
+    insights,
+    historical_start_date: out[0]?.date,
   };
 };
 
