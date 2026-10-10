@@ -38,6 +38,10 @@ class ProductPerformanceItem(BaseModel):
     profit_margin_pct: float
     current_stock: int
     stock_status: str  # In Stock, Low Stock, Out of Stock
+    cost_price: Optional[float] = None
+    selling_price: Optional[float] = None
+    change_pct: Optional[float] = None
+    reorder_level: Optional[int] = None
 
 
 class CategoryPerformanceItem(BaseModel):
@@ -53,6 +57,10 @@ class ProductAnalyticsResponse(BaseModel):
     top_performers: List[ProductPerformanceItem]
     slow_movers: List[ProductPerformanceItem]
     category_breakdown: List[CategoryPerformanceItem]
+    kpis: Optional[List[Dict[str, Any]]] = None
+    all_products: Optional[List[ProductPerformanceItem]] = None
+    trend: Optional[List[Dict[str, Any]]] = None
+    trend_keys: Optional[List[Dict[str, Any]]] = None
 
 
 class CustomerDemographicItem(BaseModel):
@@ -74,6 +82,18 @@ class CustomerAnalyticsResponse(BaseModel):
     payment_preferences: List[CustomerDemographicItem]
     top_states: List[GeographicDistributionItem]
     top_cities: List[GeographicDistributionItem]
+    
+    # Enhanced fields for Business Analytics Customers section
+    kpis: Optional[List[Dict[str, Any]]] = None
+    trend: Optional[List[Dict[str, Any]]] = None
+    trend_keys: Optional[List[Dict[str, Any]]] = None
+    breakdown: Optional[List[Dict[str, Any]]] = None
+    breakdown_label: Optional[str] = None
+    breakdown_unit: Optional[str] = None
+    table: Optional[Dict[str, Any]] = None
+    geographic_performance: Optional[List[Dict[str, Any]]] = None
+    segment_summary: Optional[List[Dict[str, Any]]] = None
+    customer_insights: Optional[List[Dict[str, Any]]] = None
 
 
 class ReorderAlertItem(BaseModel):

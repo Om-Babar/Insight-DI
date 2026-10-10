@@ -51,6 +51,25 @@ def test_customer_demographics():
     assert len(data["top_states"]) > 0
     assert len(data["top_cities"]) > 0
 
+    # Enhanced Customer Analytics assertions
+    assert "kpis" in data and len(data["kpis"]) == 4
+    kpi_keys = {k["key"] for k in data["kpis"]}
+    assert kpi_keys == {"cust", "new", "repeat", "clv"}
+    assert data["kpis"][0]["value"] > 0  # Active customers > 0
+    assert data["kpis"][2]["value"] > 0  # Repeat rate > 0
+
+    assert "trend" in data and len(data["trend"]) > 0
+    assert "breakdown" in data and len(data["breakdown"]) == 5
+    assert "table" in data and len(data["table"]["rows"]) > 0
+    assert "customer_insights" in data and len(data["customer_insights"]) == 3
+
+    # Test filtering by segment
+    filt_res = client.get("/api/v1/analytics/customers/demographics?range=30d&segment=Champions")
+    assert filt_res.status_code == 200
+    filt_data = filt_res.json()["data"]
+    assert filt_data["kpis"][0]["value"] > 0
+    assert filt_data["kpis"][0]["value"] < data["kpis"][0]["value"]  # Filtered count is subset of total
+
 
 def test_inventory_status():
     response = client.get("/api/v1/analytics/inventory/status")

@@ -37,11 +37,16 @@ def get_sales_trends(
 
 @router.get("/products/performance", response_model=APIResponse[ProductAnalyticsResponse], summary="Top performers, slow movers & categories")
 def get_product_performance(
-    limit: int = Query(10, ge=3, le=50),
+    limit: int = Query(10, ge=3, le=100),
+    range: str = Query("30d"),
+    comparison: str = Query("previous_period"),
+    category: Optional[str] = None,
     db: Session = Depends(get_db),
 ):
     """Analyze SKU performance, profit margins, and category revenue contributions."""
-    data = AnalyticsService.get_product_performance(db, limit=limit)
+    data = AnalyticsService.get_product_performance(
+        db, limit=limit, range=range, comparison=comparison, category=category
+    )
     return APIResponse(
         success=True,
         message="Product performance metrics calculated successfully",
@@ -50,9 +55,16 @@ def get_product_performance(
 
 
 @router.get("/customers/demographics", response_model=APIResponse[CustomerAnalyticsResponse], summary="Customer segments & geographic concentrations")
-def get_customer_demographics(db: Session = Depends(get_db)):
-    """Analyze customer tiers, payment method preferences, and top states/cities by spend."""
-    data = AnalyticsService.get_customer_demographics(db)
+def get_customer_demographics(
+    range: str = Query("30d"),
+    comparison: str = Query("previous_period"),
+    segment: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+):
+    """Analyze customer KPIs, acquisition trends, segmentation, and geographic performance."""
+    data = AnalyticsService.get_customer_demographics(
+        db, range=range, comparison=comparison, segment=segment
+    )
     return APIResponse(
         success=True,
         message="Customer demographic insights calculated successfully",

@@ -28,14 +28,36 @@ const fields: { k: keyof SimulationInput; l: string; min: number; max: number; s
 ];
 
 function Simulation() {
-  const [input, setInput] = useState<SimulationInput>({ ad_spend: 150000, price: 1499, discount_pct: 10, restock_units: 2000 });
+  const [productContext] = useState(() => {
+    if (typeof window === "undefined") return null;
+    const p = new URLSearchParams(window.location.search);
+    const prod = p.get("product");
+    const pr = p.get("price");
+    const scenario = p.get("scenario");
+    if (prod) return { name: prod, price: pr ? Number(pr) : null };
+    if (scenario) return { name: scenario === "growth" ? "Regional Expansion Scenario" : scenario, price: null };
+    return null;
+  });
+
+  const [input, setInput] = useState<SimulationInput>(() => {
+    let initialPrice = 1499;
+    if (typeof window !== "undefined") {
+      const p = new URLSearchParams(window.location.search);
+      const pr = Number(p.get("price"));
+      if (!isNaN(pr) && pr > 0) initialPrice = Math.min(5000, Math.max(200, Math.round(pr)));
+    }
+    return { ad_spend: 150000, price: initialPrice, discount_pct: 10, restock_units: 2000 };
+  });
   const sim = useMutation({ mutationFn: api.simulate });
   const r = sim.data;
   return (
     <>
       <PageHeader title="What-if simulation" description="Try changes safely and see the expected outcome before acting." />
       <div className="grid gap-6 lg:grid-cols-3">
-        <Panel title="Your levers">
+        <Panel
+          title="Your levers"
+          subtitle={productContext ? `Product: ${productContext.name}` : undefined}
+        >
           <div className="space-y-6">
             {fields.map((f) => (
               <div key={f.k}>

@@ -53,14 +53,14 @@ const qs = (p: Record<string, string | number | undefined>) => {
 export const api = {
   overview: () => request<T.Overview>("/api/v1/overview/summary", undefined, preview.overview),
   
-  analytics: (section: T.AnalyticsSection, range: string) => {
+  analytics: (section: T.AnalyticsSection, range: string, params?: Record<string, string | number | undefined>) => {
     let path = "/api/v1/analytics/";
     if (section === "sales") path += "sales/trends";
     else if (section === "products") path += "products/performance";
     else if (section === "customers") path += "customers/demographics";
     else if (section === "inventory") path += "inventory/status";
     else if (section === "marketing") path += "marketing/campaigns";
-    return request<T.AnalyticsData>(`${path}${qs({ range })}`, undefined, () => preview.analytics(section));
+    return request<any>(`${path}${qs({ range, ...params })}`, undefined, () => preview.analytics(section));
   },
   
   forecast: (horizon: number, model: string, category?: string) => {

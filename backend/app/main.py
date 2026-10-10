@@ -15,6 +15,7 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger("insightdi")
+# InsightDI API Root Application
 
 
 @asynccontextmanager
@@ -24,8 +25,18 @@ async def lifespan(app: FastAPI):
     try:
         Base.metadata.create_all(bind=engine)
         logger.info("Database tables initialized successfully.")
+        # Ensure PostgreSQL compatibility helper functions exist
+        if "postgresql" in str(engine.url):
+            from sqlalchemy import text
+            with engine.begin() as conn:
+                conn.execute(text("""
+                CREATE OR REPLACE FUNCTION round(double precision, integer) 
+                RETURNS numeric AS $$ 
+                    SELECT round($1::numeric, $2); 
+                $$ LANGUAGE sql IMMUTABLE;
+                """))
     except Exception as e:
-        logger.error(f"Error creating database tables: {e}")
+        logger.error(f"Error creating database tables or compatibility functions: {e}")
     yield
     logger.info("Shutting down InsightDI API Server...")
 

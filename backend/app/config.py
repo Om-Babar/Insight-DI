@@ -11,10 +11,9 @@ class Settings(BaseSettings):
     DEBUG: bool = True
     API_V1_STR: str = "/api/v1"
 
-    # Database
+    # Database (PostgreSQL Authoritative)
     DATABASE_URL: str = "postgresql+psycopg2://postgres:postgres@localhost:5432/insightdi"
-    FALLBACK_SQLITE_URL: str = "sqlite:///./insightdi.db"
-    USE_SQLITE_FALLBACK: bool = True
+    USE_SQLITE_FALLBACK: bool = False
 
     # Security & Auth
     SECRET_KEY: str = "insightdi-super-secret-development-key-change-in-production-12345"

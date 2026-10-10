@@ -17,9 +17,29 @@ export const Route = createFileRoute("/root-cause")({
 
 function RootCause() {
   const q = useQuery({ queryKey: ["rca"], queryFn: api.rca });
+  const productFocus = typeof window !== "undefined" ? (() => {
+    const p = new URLSearchParams(window.location.search);
+    const sku = p.get("sku");
+    const name = p.get("name");
+    const metric = p.get("metric");
+    if (sku || name) return { title: `${name || sku} (${sku})` };
+    if (metric) return { title: metric === "retention" ? "Customer Retention" : metric.toUpperCase() };
+    return null;
+  })() : null;
+
   return (
     <>
-      <PageHeader title="Root cause analysis" description="Why your numbers changed, ranked by impact." />
+      <PageHeader
+        title="Root cause analysis"
+        description="Why your numbers changed, ranked by impact."
+        actions={
+          productFocus ? (
+            <Pill tone="ai">
+              Diagnostic Focus: {productFocus.title}
+            </Pill>
+          ) : undefined
+        }
+      />
       <QueryState q={q}>{(d) => (
         <>
           <div className="grid gap-6 lg:grid-cols-2">
