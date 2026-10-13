@@ -73,9 +73,16 @@ def get_customer_demographics(
 
 
 @router.get("/inventory/status", response_model=APIResponse[InventoryAnalyticsResponse], summary="Stock health, valuation, turnover & reorder alerts")
-def get_inventory_status(db: Session = Depends(get_db)):
-    """Evaluate inventory health, valuation, turnover ratio, and urgent reorder deficits."""
-    data = AnalyticsService.get_inventory_status(db)
+def get_inventory_status(
+    range: str = Query("30d"),
+    comparison: str = Query("previous_period"),
+    status: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+):
+    """Evaluate inventory health, valuation, turnover ratio, reorder alerts, and time-series trends."""
+    data = AnalyticsService.get_inventory_status(
+        db, range=range, comparison=comparison, status=status
+    )
     return APIResponse(
         success=True,
         message="Inventory health and reorder alerts calculated successfully",
@@ -84,9 +91,17 @@ def get_inventory_status(db: Session = Depends(get_db)):
 
 
 @router.get("/marketing/campaigns", response_model=APIResponse[MarketingAnalyticsResponse], summary="Advertising spend, ROAS, CAC & channel efficiency")
-def get_marketing_campaigns(db: Session = Depends(get_db)):
+def get_marketing_campaigns(
+    range: str = Query("30d"),
+    comparison: str = Query("previous_period"),
+    channel: Optional[str] = Query(None),
+    status: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+):
     """Evaluate digital marketing efficiency across search, social, display, and affiliate channels."""
-    data = AnalyticsService.get_marketing_campaigns(db)
+    data = AnalyticsService.get_marketing_campaigns(
+        db, range=range, comparison=comparison, channel=channel, status=status
+    )
     return APIResponse(
         success=True,
         message="Marketing campaign analytics calculated successfully",

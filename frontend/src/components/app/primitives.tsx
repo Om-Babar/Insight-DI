@@ -6,6 +6,7 @@ import { fmt, fullTime, timeAgo, type Unit } from "@/lib/format";
 import type { Kpi, Severity, Priority } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export function PageHeader({ title, description, actions, step }: { title: string; description: string; actions?: ReactNode; step?: string }) {
   return (
@@ -49,7 +50,28 @@ export function KpiCard({ kpi, to }: { kpi: Kpi; to?: string | undefined }) {
   const body = (
     <div className={cn("surface group h-full p-5 transition-shadow", to && "hover:shadow-lift")}>
       <div className="flex items-center justify-between">
-        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{kpi.label}</p>
+        <div className="flex items-center gap-1.5">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{kpi.label}</p>
+          {kpi.tooltip && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    className="inline-flex items-center justify-center text-muted-foreground/60 hover:text-foreground transition-colors cursor-pointer"
+                    aria-label={`Information about ${kpi.label}`}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Info className="size-3.5" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-xs text-xs font-normal">
+                  <p>{kpi.tooltip}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+        </div>
         <span className={cn("size-2 rounded-full", kpi.status === "good" ? "bg-success" : kpi.status === "warning" ? "bg-warning" : "bg-critical")} aria-label={`status ${kpi.status}`} />
       </div>
       <p className="tabular mt-2 font-display text-[28px] font-bold leading-none text-foreground">{fmt(kpi.value, kpi.unit)}</p>
@@ -57,7 +79,7 @@ export function KpiCard({ kpi, to }: { kpi: Kpi; to?: string | undefined }) {
         <span className={cn("inline-flex items-center gap-0.5 font-semibold", statusTone[kpi.status])}>
           {up ? <ArrowUpRight className="size-3.5" /> : <ArrowDownRight className="size-3.5" />}
           {Math.abs(kpi.change_pct).toFixed(1)}%
-          <span className="ml-1 font-normal text-muted-foreground">vs last period</span>
+          <span className="ml-1 font-normal text-muted-foreground">{kpi.comparison_label || "vs last period"}</span>
         </span>
         {to && <ArrowRight className="size-3.5 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />}
       </div>

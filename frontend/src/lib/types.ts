@@ -9,6 +9,8 @@ export interface Kpi {
   change_pct: number;
   status: "good" | "warning" | "critical";
   hint?: string;
+  tooltip?: string;
+  comparison_label?: string;
 }
 
 export interface Alert {

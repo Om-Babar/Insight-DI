@@ -181,32 +181,125 @@ export const analytics = (section: T.AnalyticsSection): T.AnalyticsData => {
     case "inventory":
       return { ...common,
         kpis: [
-          { key: "val", label: "Stock value", value: 4120000, unit: "currency", change_pct: -3.2, status: "good" },
-          { key: "turn", label: "Inventory turnover", value: 5.8, unit: "number", change_pct: 0.4, status: "good" },
-          { key: "risk", label: "Stockout risks", value: 3, unit: "number", change_pct: 50, status: "critical" },
-          { key: "over", label: "Overstocked items", value: 5, unit: "number", change_pct: -1, status: "warning" },
+          { key: "stock_value", label: "Stock Value", value: 47064905.2, unit: "currency", change_pct: 2.0, status: "good", hint: "At cost price (₹4.71 Cr cost)", tooltip: "Shows the total value of inventory currently held by your business at cost price." },
+          { key: "inventory_turnover", label: "Inventory Turnover", value: 5.9, unit: "number", change_pct: 1.87, status: "good", hint: "5.9x annualized (0.49x in 30d period)", tooltip: "Shows how frequently your inventory is sold and replenished during the reporting period." },
+          { key: "stockout_risks", label: "Stockout Risks", value: 3, unit: "number", change_pct: 50.0, status: "critical", hint: "3 products at or below safety reorder level", tooltip: "Products that may run out of stock before replenishment arrives." },
+          { key: "overstocked_items", label: "Overstocked Items", value: 10, unit: "number", change_pct: -28.6, status: "warning", hint: "10 products with >180 days forward cover", tooltip: "Products whose current stock may exceed expected demand." },
         ],
-        trend: s.map((p) => ({ date: p.date, stock_units: 9000 - p.i * 40 + (p.i % 10 === 0 ? 800 : 0) })),
-        trend_keys: [{ key: "stock_units", label: "Units in stock", unit: "number" }],
-        breakdown: overview().inventory_alerts.map((a) => ({ name: a.name, value: a.days_of_cover })),
-        breakdown_label: "Days of stock cover", breakdown_unit: "number",
-        table: { columns: [{ key: "name", label: "Product" }, { key: "stock", label: "Stock", unit: "number" }, { key: "days_of_cover", label: "Days of cover", unit: "number" }, { key: "risk", label: "Risk" }],
-          rows: overview().inventory_alerts as unknown as Record<string, string | number>[] },
+        trend: s.map((p) => {
+          const val = 41390 - p.i * 12 + (p.i % 8 === 0 ? 320 : 0);
+          return { date: p.date, available_units: val, stock_units: val, units_sold: 45 + (p.i % 5) * 8, units_restocked: (p.i % 8 === 0 ? 320 : 0) };
+        }),
+        trend_keys: [{ key: "available_units", label: "Available Units", unit: "number" }],
+        breakdown: [
+          { name: "IndiCore Smartwatch", value: 4.9, sku: "PROD0227", category: "Electronics", risk: "stockout" },
+          { name: "NaturalEssence Serum", value: 10.4, sku: "PROD0304", category: "Beauty", risk: "stockout" },
+          { name: "AuraTech USB-C Hub", value: 27.3, sku: "PROD0468", category: "Electronics", risk: "stockout" },
+          { name: "AeroTrack Earbuds", value: 31.2, sku: "PROD0101", category: "Audio", risk: "low_stock" },
+        ],
+        low_cover_products: [
+          { name: "IndiCore Smartwatch", value: 4.9, sku: "PROD0227", category: "Electronics", risk: "stockout" },
+          { name: "NaturalEssence Serum", value: 10.4, sku: "PROD0304", category: "Beauty", risk: "stockout" },
+          { name: "AuraTech USB-C Hub", value: 27.3, sku: "PROD0468", category: "Electronics", risk: "stockout" },
+          { name: "AeroTrack Earbuds", value: 31.2, sku: "PROD0101", category: "Audio", risk: "low_stock" },
+        ],
+        overstocked_products: [
+          { name: "AeroTrack Dumbbells", value: 270.0, sku: "PROD0089", category: "Fitness", risk: "overstock" },
+          { name: "LuxeOrganics Cream", value: 256.0, sku: "PROD0045", category: "Beauty", risk: "overstock" },
+          { name: "GramShree Green Tea", value: 236.0, sku: "PROD0112", category: "Grocery", risk: "overstock" },
+        ],
+        breakdown_label: "Days of Stock Cover",
+        breakdown_unit: "number",
+        table: {
+          columns: [
+            { key: "product_name", label: "Product" },
+            { key: "current_stock", label: "Available Stock", unit: "number" },
+            { key: "days_of_cover", label: "Days of Cover", unit: "number" },
+            { key: "avg_daily_demand", label: "Expected Daily Demand", unit: "number" },
+            { key: "replenishment_lead_time", label: "Replenishment Lead Time" },
+            { key: "risk", label: "Risk Level" },
+            { key: "suggested_action", label: "Suggested Action" },
+          ],
+          rows: [
+            { product_id: "PROD0227", product_name: "IndiCore Smartwatch", category: "Electronics", current_stock: 7, days_of_cover: 4.9, avg_daily_demand: 1.43, replenishment_lead_time: "Not tracked", risk: "stockout", suggested_action: "Expedite Purchase Order" },
+            { product_id: "PROD0304", product_name: "NaturalEssence Serum", category: "Beauty", current_stock: 18, days_of_cover: 10.4, avg_daily_demand: 1.73, replenishment_lead_time: "Not tracked", risk: "stockout", suggested_action: "Expedite Purchase Order" },
+            { product_id: "PROD0468", product_name: "AuraTech USB-C Hub", category: "Electronics", current_stock: 30, days_of_cover: 27.3, avg_daily_demand: 1.10, replenishment_lead_time: "Not tracked", risk: "stockout", suggested_action: "Expedite Purchase Order" },
+            { product_id: "PROD0089", product_name: "AeroTrack Dumbbells", category: "Fitness", current_stock: 540, days_of_cover: 270.0, avg_daily_demand: 2.00, replenishment_lead_time: "Not tracked", risk: "overstock", suggested_action: "Run Clearance Promotion" },
+          ],
+        },
       };
     case "marketing":
       return { ...common,
         kpis: [
-          { key: "spend", label: "Ad spend", value: 312000, unit: "currency", change_pct: 4.0, status: "good" },
-          { key: "roas", label: "ROAS", value: 3.2, unit: "number", change_pct: -0.3, status: "warning" },
-          { key: "cac", label: "Cost per customer", value: 279, unit: "currency", change_pct: 6.1, status: "warning" },
-          { key: "ctr", label: "Click-through rate", value: 2.4, unit: "percent", change_pct: -0.2, status: "warning" },
+          { key: "spend", label: "Ad Spend", value: 251368.11, unit: "currency", change_pct: 4.6, status: "good", hint: "₹8,379/day across 5 channels", comparison_label: "vs last period", tooltip: "Total advertising investment spent on digital marketing campaigns during the selected period." },
+          { key: "revenue", label: "Attributed Revenue", value: 4884372.15, unit: "currency", change_pct: 12.4, status: "good", hint: "1,505 orders at ₹3,245 AOV", comparison_label: "vs last period", tooltip: "Estimated sales revenue generated from marketing campaigns, calculated from verified customer conversions multiplied by average order value." },
+          { key: "roas", label: "Return on Ad Spend (ROAS)", value: 19.4, unit: "number", change_pct: 7.5, status: "good", hint: "Target: 3.0x (Above benchmark)", comparison_label: "vs last period", tooltip: "Revenue earned for every rupee spent on ads (Revenue ÷ Ad Spend). A ROAS of 4.0x means every ₹1 spent on ads generated ₹4 in sales." },
+          { key: "cac", label: "Cost Per Acquisition (CPA)", value: 167.0, unit: "currency", change_pct: -6.9, status: "good", hint: "CTR: 2.9% (46,105 clicks)", comparison_label: "vs last period", tooltip: "Average advertising cost to acquire one completed customer order (Ad Spend ÷ Conversions). Lower costs indicate higher marketing efficiency." },
         ],
-        trend: s.map((p) => ({ date: p.date, spend: Math.round(p.v / 8.5), revenue: p.v })),
-        trend_keys: [{ key: "revenue", label: "Attributed revenue", unit: "currency" }, { key: "spend", label: "Ad spend", unit: "currency" }],
-        breakdown: [{ name: "Google Search", value: 4.1 }, { name: "Instagram", value: 2.9 }, { name: "Amazon Ads", value: 3.4 }, { name: "Display", value: 1.6 }],
-        breakdown_label: "Return on ad spend by channel (x)", breakdown_unit: "number",
-        table: { columns: [{ key: "campaign", label: "Campaign" }, { key: "spend", label: "Spend", unit: "currency" }, { key: "revenue", label: "Revenue", unit: "currency" }, { key: "roas", label: "ROAS", unit: "number" }],
-          rows: [{ campaign: "Festive Audio Search", spend: 92000, revenue: 377000, roas: 4.1 }, { campaign: "Wearables Reels", spend: 71000, revenue: 206000, roas: 2.9 }, { campaign: "Display Retargeting", spend: 64000, revenue: 102000, roas: 1.6 }] },
+        trend: s.map((p) => {
+          const spend = Math.round(7500 + (p.i % 7) * 350 + (p.i % 3) * 200);
+          const conversions = Math.round(42 + (p.i % 5) * 5);
+          const revenue = Math.round(conversions * 3245.43);
+          const roas = Number((revenue / (spend || 1)).toFixed(1));
+          return { date: p.date, spend, revenue, roas, conversions };
+        }),
+        trend_keys: [
+          { key: "revenue", label: "Attributed Revenue", unit: "currency" },
+          { key: "spend", label: "Ad Spend", unit: "currency" },
+        ],
+        breakdown: [
+          { name: "Search", value: 16.1, spend: 75276.94, revenue: 1213790.82, conversions: 374, cpa: 201.3, ctr: 3.5, status: "strong" },
+          { name: "Social Media", value: 11.7, spend: 97717.82, revenue: 1145636.79, conversions: 353, cpa: 276.8, ctr: 2.2, status: "strong" },
+          { name: "Email", value: 109.8, spend: 18384.53, revenue: 2018657.46, conversions: 622, cpa: 29.6, ctr: 5.1, status: "strong" },
+          { name: "Affiliate", value: 12.3, spend: 27907.29, revenue: 344015.58, conversions: 106, cpa: 263.3, ctr: 2.8, status: "moderate" },
+          { name: "Display", value: 5.1, spend: 32081.53, revenue: 162271.50, conversions: 50, cpa: 641.6, ctr: 1.4, status: "attention" },
+        ],
+        breakdown_label: "Channel Return on Ad Spend (ROAS)",
+        breakdown_unit: "number",
+        table: {
+          columns: [
+            { key: "campaign_name", label: "Campaign / Channel" },
+            { key: "channel_category", label: "Channel Type" },
+            { key: "spend", label: "Ad Spend", unit: "currency" },
+            { key: "revenue", label: "Attributed Revenue", unit: "currency" },
+            { key: "roas", label: "ROAS", unit: "number" },
+            { key: "conversions", label: "Conversions", unit: "number" },
+            { key: "cost_per_acquisition", label: "CPA", unit: "currency" },
+            { key: "click_through_rate_pct", label: "CTR", unit: "percent" },
+            { key: "status", label: "Status" },
+            { key: "recommended_action", label: "Recommended Action" },
+          ],
+          rows: [
+            { campaign_name: "Google Search - High-Intent Commercial", channel: "Search", channel_category: "Search Ads", spend: 75276.94, revenue: 1213790.82, roas: 16.1, conversions: 374, cost_per_acquisition: 201.28, click_through_rate_pct: 3.46, conversion_rate_pct: 3.46, status: "strong", recommended_action: "Scale Budget (+20%) to capture untapped high-intent search demand" },
+            { campaign_name: "Meta / Instagram - Reels & Carousel Prospecting", channel: "Social Media", channel_category: "Paid Social", spend: 97717.82, revenue: 1145636.79, roas: 11.7, conversions: 353, cost_per_acquisition: 276.82, click_through_rate_pct: 2.23, conversion_rate_pct: 2.68, status: "strong", recommended_action: "Scale top-performing video reels and test lookalike audiences" },
+            { campaign_name: "Email Retention - Automated VIP & Abandoned Cart", channel: "Email", channel_category: "Owned / Lifecycle", spend: 18384.53, revenue: 2018657.46, roas: 109.8, conversions: 622, cost_per_acquisition: 29.56, click_through_rate_pct: 5.07, conversion_rate_pct: 4.30, status: "strong", recommended_action: "Expand automated lifecycle flows and reward repeat buyers" },
+            { campaign_name: "Affiliate Network - Deal Publishers & Influencers", channel: "Affiliate", channel_category: "Partner Referral", spend: 27907.29, revenue: 344015.58, roas: 12.3, conversions: 106, cost_per_acquisition: 263.28, click_through_rate_pct: 2.76, conversion_rate_pct: 2.63, status: "moderate", recommended_action: "Partner with top coupon & review portals on tiered commissions" },
+            { campaign_name: "Display Retargeting - Dynamic Catalog Banners", channel: "Display", channel_category: "Programmatic Display", spend: 32081.53, revenue: 162271.50, roas: 5.1, conversions: 50, cost_per_acquisition: 641.63, click_through_rate_pct: 1.41, conversion_rate_pct: 1.38, status: "attention", recommended_action: "Cap ad budget, tighten frequency caps, and trim low-converting placements" },
+          ],
+        },
+        marketing_insights: [
+          {
+            id: "mkt-insight-1",
+            title: "High ROI Channels: Search & Email Lead Return Multiple",
+            text: "Google Search (16.1x ROAS) and Email Marketing (109.8x ROAS) generated ₹3,232,448 combined revenue on ₹93,661 spend. Testing incremental budget reallocation toward top-performing channels can help improve blended profitability without increasing overall marketing budget.",
+            tone: "good",
+            link: { text: "Simulate Budget Shift", to: "/simulation" },
+          },
+          {
+            id: "mkt-insight-2",
+            title: "Efficiency Optimization: Display Requires Placement Audit",
+            text: "Display delivered 5.1x ROAS with an elevated CPA of ₹641.6 (compared to the ₹167.0 portfolio average). Higher acquisition costs on display banners dilute margin on lower-ticket orders. We recommend capping impression frequency and restricting display spend to dynamic retargeting of recent cart abandoners.",
+            tone: "warning",
+            link: { text: "View Recommendations", to: "/recommendations?category=marketing" },
+          },
+          {
+            id: "mkt-insight-3",
+            title: "Blended Unit Economics: ₹167.0 CPA Across 1,505 Orders",
+            text: "The overall marketing portfolio operates at 19.4x blended ROAS (+7.5% vs last period). Digital advertising spend accounts for only 5.1% of attributed sales, maintaining healthy customer acquisition margins.",
+            tone: "analytics",
+            link: { text: "Analyze Marketing Funnel", to: "/root-cause?metric=acquisition" },
+          },
+        ],
       };
   }
 };
