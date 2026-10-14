@@ -165,10 +165,11 @@ export function PriorityPill({ p }: { p: Priority }) {
   return <Pill tone={p === "high" ? "critical" : p === "medium" ? "warning" : "neutral"}>{p} priority</Pill>;
 }
 
-export function Freshness({ source, at, status = "fresh" }: { source: string; at: string; status?: "fresh" | "stale" | "failed" }) {
+export function Freshness({ source, at, status = "fresh" }: { source: string; at: string; status?: "fresh" | "stale" | "failed" | "unconfigured" }) {
+  const dotColor = status === "fresh" ? "bg-success" : status === "stale" ? "bg-warning" : status === "unconfigured" ? "bg-muted-foreground" : "bg-critical";
   return (
     <span className="inline-flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground" title={`Collected ${fullTime(at)}`}>
-      <span className={cn("size-1.5 rounded-full", status === "fresh" ? "bg-success" : status === "stale" ? "bg-warning" : "bg-critical")} />
+      <span className={cn("size-1.5 rounded-full", dotColor)} />
       <span className="font-medium text-foreground">{source}</span>· {status} · {timeAgo(at)}
     </span>
   );

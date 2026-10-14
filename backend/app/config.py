@@ -25,6 +25,11 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str = ""
     ACTIVE_LLM_PROVIDER: str = "gemini"
 
+    # Apify Competitive Intelligence
+    APIFY_API_TOKEN: str = ""
+    APIFY_AMAZON_ACTOR_ID: str = "junglee/amazon-crawler"
+    APIFY_FLIPKART_ACTOR_ID: str = "shahidirfan/flipkart-product-scraper"
+
     # CORS
     CORS_ORIGINS: List[str] = [
         "http://localhost:5173",

@@ -18,9 +18,20 @@ export interface Alert {
   severity: Severity;
   title: string;
   detail: string;
+  alert_type?: string;
+  product_id?: string;
+  product_name?: string;
+  competitor_name?: string;
+  previous_price?: number;
+  latest_price?: number;
+  price_diff_abs?: number;
+  price_diff_pct?: number;
+  last_observed?: string;
+  recommended_action?: string;
   link?: string;
   created_at: string;
 }
+
 
 export interface TrendPoint {
   date: string;
@@ -128,27 +139,53 @@ export interface CompetitorListing {
   match_confidence: number;
   url?: string;
   collected_at: string;
-  status: "fresh" | "stale" | "failed";
+  status: "fresh" | "stale" | "failed" | "unconfigured" | "configured" | "not_synced" | "last_known_data";
 }
 
 export interface CompetitorProduct {
   sku: string;
   name: string;
+  category?: string;
   our_price: number;
   our_discount_pct: number;
   our_rating: number;
   our_reviews: number;
   our_availability: CompetitorListing["availability"];
   position: "cheapest" | "competitive" | "overpriced";
+  price_gap_vs_lowest_pct?: number | null;
+  price_gap_vs_lowest_abs?: number | null;
+  lowest_competitor_price?: number | null;
+  last_checked?: string;
   listings: CompetitorListing[];
   price_history: { date: string; ours: number; amazon?: number; flipkart?: number }[];
 }
 
+export interface CIOverviewMetrics {
+  products_monitored: number;
+  price_alerts_count: number;
+  products_priced_above_count: number;
+  competitor_availability_changes_count: number;
+  cheapest_count: number;
+  competitive_count: number;
+}
+
+export interface CIInsightItem {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  impact: string;
+  suggested_action: string;
+}
+
 export interface CompetitionData {
   last_collected: string;
-  sources: { platform: string; status: "fresh" | "stale" | "failed"; last_collected: string; products: number }[];
+  overview?: CIOverviewMetrics;
+  sources: { platform: string; status: "fresh" | "stale" | "failed" | "unconfigured" | "configured" | "not_synced" | "last_known_data"; last_collected: string; products: number; message?: string }[];
   products: CompetitorProduct[];
   alerts: Alert[];
+  insights?: CIInsightItem[];
+  scrape_status?: Record<string, any>;
 }
 
 export interface RcaData {

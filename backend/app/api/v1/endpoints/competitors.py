@@ -9,10 +9,36 @@ from app.schemas.competitors import (
     PriceBenchmarkResponse,
     CompetitorTrendsResponse,
     CompetitorAlertsResponse,
+    CIDashboardResponse,
 )
 from app.services.competitor_service import CompetitorService
 
 router = APIRouter()
+
+
+@router.get(
+    "/intelligence",
+    response_model=APIResponse[CIDashboardResponse],
+    summary="Full Competitive Intelligence dashboard data",
+)
+def get_competitive_intelligence(
+    limit: int = Query(50, ge=1, le=200, description="Max products to return."),
+    db: Session = Depends(get_db),
+):
+    """
+    Returns full Competitive Intelligence data:
+      - Overview metrics (Products Monitored, Price Alerts, Priced Above Competitors, Availability Changes)
+      - Marketplace status cards (Amazon.in & Flipkart)
+      - Product comparison table records with listings and historical Recharts series
+      - Actionable alerts & evidence-based business insights
+    """
+    result = CompetitorService.get_ci_dashboard(db, limit=limit)
+    return APIResponse(
+        success=True,
+        message=f"Competitive Intelligence loaded ({result.overview.products_monitored} products monitored).",
+        data=result,
+    )
+
 
 
 @router.post(

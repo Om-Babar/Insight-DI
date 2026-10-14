@@ -165,11 +165,10 @@ export const api = {
       }
     );
   },
-  
-  competition: () => request<T.CompetitionData>("/api/v1/competitors/benchmark", undefined, preview.competition),
+  competition: () => request<T.CompetitionData>("/api/v1/competitors/intelligence", undefined, preview.competition),
   
   refreshCompetition: () =>
-    request<{ job_id: string; status: string }>("/api/v1/competitors/scrape", { method: "POST", body: JSON.stringify({ keywords: ["competitor"] }) }, () => ({ job_id: "preview", status: "completed" })),
+    request<any>("/api/v1/competitors/scrape", { method: "POST", body: JSON.stringify({ platforms: ["amazon", "flipkart"], max_results_per_keyword: 3 }) }, () => ({ status: "completed" })),
     
   rca: () => request<T.RcaData>("/api/v1/rca/diagnose", undefined, preview.rca),
   

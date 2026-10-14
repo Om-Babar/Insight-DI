@@ -161,3 +161,106 @@ class CompetitorAlertsResponse(BaseModel):
     total_alerts: int
     high_priority: int
     alerts: List[CompetitorAlert]
+
+
+# ── Full Competitive Intelligence Dashboard ───────────────────────
+
+class MarketplaceSourceStatus(BaseModel):
+    """Status card for a tracked marketplace platform."""
+    platform: str
+    status: str  # "fresh", "stale", "failed", "unconfigured"
+    last_collected: str
+    products: int
+    message: Optional[str] = None
+
+
+class CIOverviewMetrics(BaseModel):
+    """Summary KPI metrics for Competitive Overview."""
+    products_monitored: int
+    price_alerts_count: int
+    products_priced_above_count: int
+    competitor_availability_changes_count: int
+    cheapest_count: int
+    competitive_count: int
+
+
+class CIProductListing(BaseModel):
+    """Specific marketplace competitor offer for a product."""
+    platform: str  # "amazon" or "flipkart"
+    price: Optional[float] = None
+    discount_pct: Optional[float] = None
+    rating: Optional[float] = None
+    reviews: Optional[int] = None
+    availability: str = "in_stock"  # "in_stock", "low_stock", "out_of_stock", "unknown"
+    match_confidence: float = 1.0
+    url: Optional[str] = None
+    collected_at: str
+    status: str = "fresh"  # "fresh", "stale", "failed"
+
+
+class CIProductPriceHistoryPoint(BaseModel):
+    """Historical observation point for price history chart."""
+    date: str
+    ours: float
+    amazon: Optional[float] = None
+    flipkart: Optional[float] = None
+
+
+class CIProductItem(BaseModel):
+    """Complete product comparison item."""
+    sku: str
+    name: str
+    category: str
+    our_price: float
+    our_discount_pct: float = 0.0
+    our_rating: float = 4.2
+    our_reviews: int = 0
+    our_availability: str = "in_stock"
+    position: str  # "cheapest", "competitive", "overpriced"
+    price_gap_vs_lowest_pct: Optional[float] = None
+    price_gap_vs_lowest_abs: Optional[float] = None
+    lowest_competitor_price: Optional[float] = None
+    last_checked: str
+    listings: List[CIProductListing]
+    price_history: List[CIProductPriceHistoryPoint]
+
+
+class CIAlertItem(BaseModel):
+    """Actionable alert item with genuine observed differences."""
+    id: str
+    severity: str  # "critical", "warning", "info", "positive"
+    alert_type: str  # "PRICE_DROP", "PRICE_UNDERCUT", "STOCK_OPPORTUNITY", "HIGH_DISCOUNT"
+    title: str
+    detail: str
+    product_id: Optional[str] = None
+    product_name: Optional[str] = None
+    competitor_name: Optional[str] = None
+    previous_price: Optional[float] = None
+    latest_price: Optional[float] = None
+    price_diff_abs: Optional[float] = None
+    price_diff_pct: Optional[float] = None
+    last_observed: str
+    recommended_action: str
+    created_at: str
+
+
+class CIInsightItem(BaseModel):
+    """Evidence-based competitive intelligence insight."""
+    id: str
+    title: str
+    description: str
+    category: str
+    impact: str
+    suggested_action: str
+
+
+class CIDashboardResponse(BaseModel):
+    """Complete response payload for the Competitive Intelligence module."""
+    last_collected: str
+    overview: CIOverviewMetrics
+    sources: List[MarketplaceSourceStatus]
+    products: List[CIProductItem]
+    alerts: List[CIAlertItem]
+    insights: List[CIInsightItem]
+    scrape_status: Optional[Dict[str, Any]] = None
+
