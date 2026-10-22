@@ -11,7 +11,7 @@ database_url = settings.DATABASE_URL
 if database_url.startswith("sqlite"):
     connect_args = {"check_same_thread": False}
 else:
-    connect_args = {"connect_timeout": 1}
+    connect_args = {"connect_timeout": 5}
 
 try:
     engine = create_engine(database_url, connect_args=connect_args, pool_pre_ping=True)

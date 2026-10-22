@@ -204,8 +204,9 @@ function Overview() {
   }, [forecastPoints, actualTrend]);
 
   // Competitive advantage percentage
-  const compTotal = (d?.competitive_summary.cheaper || 0) + (d?.competitive_summary.matched || 0) + (d?.competitive_summary.pricier || 0) || 1;
-  const compAdvantage = Math.round(((d?.competitive_summary.cheaper || 0) / compTotal) * 100);
+  const compSummary = d?.competitive_summary || { cheaper: 0, matched: 0, pricier: 0 };
+  const compTotal = (compSummary.cheaper || 0) + (compSummary.matched || 0) + (compSummary.pricier || 0) || 1;
+  const compAdvantage = Math.round(((compSummary.cheaper || 0) / compTotal) * 100);
 
   // Prioritize alerts: critical -> warning -> info -> positive
   const severityOrder: Record<Severity, number> = { critical: 0, warning: 1, info: 2, positive: 3 };
@@ -437,11 +438,11 @@ function Overview() {
         {/* Competitive Position */}
         <Panel
           title="Competitive Position"
-          footer={d && <Freshness source="Amazon & Flipkart" at={d.competitive_summary.last_collected} />}
+          footer={d && <Freshness source="Amazon & Flipkart" at={d.competitive_summary?.last_collected || d.as_of} />}
           actions={<Link to="/competition" className="text-xs font-semibold text-analytics hover:underline">View matrix</Link>}
         >
           <QueryState q={q} height={160}>{(o) => {
-            const sum = o.competitive_summary;
+            const sum = o?.competitive_summary || { cheaper: 0, matched: 0, pricier: 0 };
             const total = (sum.cheaper || 0) + (sum.matched || 0) + (sum.pricier || 0) || 1;
             return (
               <div className="flex h-full flex-col justify-center gap-4">
