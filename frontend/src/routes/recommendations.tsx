@@ -59,13 +59,13 @@ function Recs() {
       />
       <QueryState q={q} empty={(d) => !d.length}>{(d) => {
         const queryLower = searchParam.trim().toLowerCase();
-        const baseList = d.filter((r) => filter === "all" || r.status === filter);
+        const baseList = d.filter((r) => filter === "all" || (r.status || "open") === filter);
         const list = queryLower
           ? baseList.filter((r) =>
-              r.action.toLowerCase().includes(queryLower) ||
-              r.reason.toLowerCase().includes(queryLower) ||
-              r.category.toLowerCase().includes(queryLower) ||
-              r.evidence.some((e) => e.toLowerCase().includes(queryLower))
+              (r.action && r.action.toLowerCase().includes(queryLower)) ||
+              (r.reason && r.reason.toLowerCase().includes(queryLower)) ||
+              (r.category && r.category.toLowerCase().includes(queryLower)) ||
+              (Array.isArray(r.evidence) && r.evidence.some((e) => e.toLowerCase().includes(queryLower)))
             )
           : baseList;
 
@@ -80,12 +80,12 @@ function Recs() {
             )}
             <div className="grid gap-4 lg:grid-cols-2">{displayList.map((r) => (
             <article key={r.id} className="surface flex flex-col p-5">
-              <div className="flex flex-wrap items-center gap-2"><PriorityPill p={r.priority} /><Pill tone="info">{r.category}</Pill><Pill tone="ai">{Math.round(r.confidence * 100)}% confident</Pill>{r.status !== "open" && <Pill tone={r.status === "dismissed" ? "neutral" : "good"}>{r.status}</Pill>}</div>
+              <div className="flex flex-wrap items-center gap-2"><PriorityPill p={r.priority} /><Pill tone="info">{r.category}</Pill><Pill tone="ai">{Math.round((r.confidence || 0.85) * 100)}% confident</Pill>{r.status && r.status !== "open" && <Pill tone={r.status === "dismissed" ? "neutral" : "good"}>{r.status}</Pill>}</div>
               <h3 className="mt-3 font-display text-base font-bold">{r.action}</h3>
               <p className="mt-1 text-sm text-muted-foreground">{r.reason}</p>
-              <ul className="mt-3 space-y-1 text-xs text-muted-foreground">{r.evidence.map((e) => <li key={e}>• {e}</li>)}</ul>
+              <ul className="mt-3 space-y-1 text-xs text-muted-foreground">{(r.evidence || []).map((e) => <li key={e}>• {e}</li>)}</ul>
               <p className="mt-3 rounded-lg bg-success-soft px-3 py-2 text-sm font-medium text-success">Expected: {r.expected_impact}</p>
-              {r.status === "open" && (
+              {(r.status || "open") === "open" && (
                 <div className="mt-4 flex gap-2">
                   <Button size="sm" onClick={() => update.mutate({ id: r.id, status: "accepted" })}><Check className="size-4" /> Accept</Button>
                   <Button size="sm" variant="outline" onClick={() => update.mutate({ id: r.id, status: "dismissed" })}><X className="size-4" /> Dismiss</Button>

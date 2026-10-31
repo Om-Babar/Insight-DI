@@ -22,12 +22,12 @@ async function request<R>(path: string, init?: RequestInit, fallback?: () => R, 
       headers: (init?.body instanceof FormData ? init?.headers ?? {} : { "Content-Type": "application/json", ...(init?.headers as Record<string,string> | undefined) }) as HeadersInit,
     });
   } catch (e) {
-    if (fallback) return fallback();
+    if (isPreviewMode && fallback) return fallback();
     throw new ApiError("Can't reach the InsightDI server. Check your connection.");
   }
   
   if (!res.ok) {
-    if (fallback) return fallback();
+    if (isPreviewMode && fallback) return fallback();
     let detail = res.statusText;
     try {
       const j = await res.json();
@@ -227,22 +227,28 @@ export const api = {
   refreshCompetition: () =>
     request<any>("/api/v1/competitors/scrape", { method: "POST", body: JSON.stringify({ platforms: ["amazon", "flipkart"], max_results_per_keyword: 3 }) }, () => ({ status: "completed" })),
     
-  rca: () =>
+  rca: (params?: { metric?: string; period?: string; start_date?: string; end_date?: string; filter_product_id?: string; filter_category?: string; filter_channel?: string; filter_segment?: string }) =>
     request<T.RcaData>(
-      "/api/v1/rca/diagnose",
+      `/api/v1/rca/diagnose${qs(params || {})}`,
       undefined,
       preview.rca,
       (raw: any): T.RcaData => {
-        if (raw?.problem && raw?.factors) return raw;
-
         const base = preview.rca();
         const anomaly = raw?.anomaly;
-        const changePct = anomaly?.percent_change ?? -18;
-        const metricName = (anomaly?.metric || raw?.metric || "daily_revenue").replace(/_/g, " ");
+        const changePct = anomaly?.percent_change ?? raw?.summary?.percent_change ?? -18;
+        const metricName = (anomaly?.metric || raw?.summary?.metric_key || "daily_revenue").replace(/_/g, " ");
         const metricFormatted = metricName.charAt(0).toUpperCase() + metricName.slice(1);
         const isPositive = (anomaly?.status === "surge") || changePct >= 0;
 
-        const factors = (raw?.contributing_factors && raw.contributing_factors.length > 0)
+        const factorCards: T.RcaFactorCard[] = raw?.factors || [];
+        const factors = (factorCards.length > 0)
+          ? factorCards.map((f: any) => ({
+              factor: f.title || f.factor_name || "Unknown Factor",
+              contribution_pct: Math.round(f.contribution_pct ?? f.impact_pct ?? 0),
+              direction: (f.relationship === "positive" || f.direction === "positive") ? ("positive" as const) : ("negative" as const),
+              explanation: f.simple_explanation || f.evidence || "",
+            }))
+          : (raw?.contributing_factors && raw.contributing_factors.length > 0)
           ? raw.contributing_factors.map((f: any) => ({
               factor: (f.factor_name || "Unknown Factor").replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase()),
               contribution_pct: Math.round(f.impact_pct ?? 0),
@@ -253,31 +259,108 @@ export const api = {
 
         const primary = factors[0] || base.factors[0];
 
+        // Format waterfall for charts
+        const waterfall = raw?.financial_impact?.steps
+          ? raw.financial_impact.steps.map((s: any) => ({
+              name: s.name,
+              value: s.value,
+              formatted_value: s.formatted_value,
+              category: s.category,
+              is_subtotal: s.is_subtotal,
+              is_residual: s.is_residual,
+              note: s.note,
+            }))
+          : base.waterfall;
+
+        // Format anomalies for chart
+        const anomalies = raw?.unusual_activity
+          ? raw.unusual_activity.map((a: any) => ({
+              date: a.date,
+              day_name: a.day_name,
+              value: a.actual,
+              expected: a.expected,
+              deviation_abs: a.deviation_abs,
+              deviation_pct: a.deviation_pct,
+              anomaly: a.is_anomaly,
+              severity: a.severity,
+              flag: a.flag,
+            }))
+          : base.anomalies;
+
+        // Format SHAP features
+        const shap = raw?.advanced_analysis?.shap_features
+          ? raw.advanced_analysis.shap_features.map((s: any) => ({
+              feature: s.business_meaning || s.feature,
+              raw_feature: s.feature,
+              importance: s.mean_abs_shap,
+              direction: s.direction_impact,
+            }))
+          : base.shap;
+
         return {
+          controls: raw?.controls,
+          summary: raw?.summary,
+          factor_cards: factorCards,
+          financial_impact: raw?.financial_impact,
+          business_impact: raw?.business_impact,
+          unusual_activity: raw?.unusual_activity,
+          event_timeline: raw?.event_timeline,
+          next_steps: raw?.next_steps,
+          advanced_analysis: raw?.advanced_analysis,
           problem: {
-            title: anomaly
-              ? `${metricFormatted} shifted by ${changePct >= 0 ? "+" : ""}${changePct.toFixed(1)}% (${anomaly.status || (isPositive ? "surge" : "drop")})`
-              : base.problem.title,
-            metric: metricFormatted,
+            title: raw?.summary?.simple_explanation
+              ? `${raw.summary.metric_label} shifted by ${changePct >= 0 ? "+" : ""}${changePct.toFixed(1)}%`
+              : (anomaly
+                ? `${metricFormatted} shifted by ${changePct >= 0 ? "+" : ""}${changePct.toFixed(1)}% (${anomaly.status || (isPositive ? "surge" : "drop")})`
+                : base.problem.title),
+            metric: raw?.summary?.metric_label || metricFormatted,
             change_pct: changePct,
-            period: anomaly?.period_current || base.problem.period,
-            summary: raw?.root_cause_summary || base.problem.summary,
+            period: raw?.summary?.period_current_label || anomaly?.period_current || base.problem.period,
+            summary: raw?.summary?.simple_explanation || raw?.root_cause_summary || base.problem.summary,
           },
           main_cause: {
             factor: primary?.factor || base.main_cause.factor,
             contribution_pct: primary?.contribution_pct ?? base.main_cause.contribution_pct,
-            explanation: primary?.explanation || raw?.root_cause_summary || base.main_cause.explanation,
+            explanation: primary?.explanation || raw?.summary?.simple_explanation || base.main_cause.explanation,
           },
           factors,
-          waterfall: base.waterfall,
-          anomalies: base.anomalies,
-          shap: base.shap,
-          model_info: base.model_info,
+          waterfall,
+          anomalies,
+          shap,
+          model_info: {
+            model: raw?.advanced_analysis?.model_name || base.model_info.model,
+            samples: raw?.advanced_analysis?.training_sample_count || base.model_info.samples,
+            r2: raw?.advanced_analysis?.r2_fit || base.model_info.r2,
+          },
         };
       }
     ),
   
-  recommendations: () => request<T.Recommendation[]>("/api/v1/recommendations/prescriptions", undefined, preview.recommendations, (data: any) => data.recommendations || []),
+  recommendations: () =>
+    request<T.Recommendation[]>(
+      "/api/v1/recommendations/prescriptions",
+      undefined,
+      preview.recommendations,
+      (data: any): T.Recommendation[] => {
+        const rawRecs = data?.recommendations || (Array.isArray(data) ? data : []);
+        return rawRecs.map((r: any, idx: number) => ({
+          id: r.id ? String(r.id) : `rec-${idx + 1}`,
+          action: r.action || r.title || "Review business action",
+          category: (r.category?.toLowerCase() || "operations") as any,
+          priority: (r.priority?.toLowerCase() || "medium") as any,
+          reason: r.reason || r.title || r.action || "Recommended by prescriptive intelligence engine.",
+          evidence: Array.isArray(r.evidence)
+            ? r.evidence
+            : Array.isArray(r.supporting_evidence)
+            ? r.supporting_evidence
+            : [r.expected_outcome || "Based on recent store performance data."],
+          expected_impact: r.expected_impact || r.expected_outcome || (r.estimated_revenue_lift_inr ? `+₹${r.estimated_revenue_lift_inr.toLocaleString()} estimated lift` : "Positive business impact"),
+          impact_value: r.impact_value ?? r.estimated_revenue_lift_inr ?? 0,
+          confidence: typeof r.confidence === "number" ? r.confidence : (typeof r.confidence_score === "number" ? r.confidence_score : 0.85),
+          status: r.status || "open",
+        }));
+      }
+    ),
   
   updateRecommendation: (id: string, status: T.Recommendation["status"]) =>
     request<T.Recommendation>(`/api/v1/recommendations/${id}`, { method: "PATCH", body: JSON.stringify({ status }) }, () => ({ ...preview.recommendations().find((r) => r.id === id)!, status })),
@@ -297,7 +380,31 @@ export const api = {
   ingestDataset: (id: string, mapping: T.ColumnMapping[], fixes: string[]) =>
     request<{ status: string }>(`/api/v1/datasources/${id}/process`, { method: "POST", body: JSON.stringify({ apply_imputation: true, drop_duplicates: true, standardize_dates: true }) }, () => ({ status: "ingested" })),
     
-  datasetHistory: () => request<T.UploadHistoryItem[]>("/api/v1/datasources/history", undefined, preview.history),
+  datasetHistory: () =>
+    request<T.UploadHistoryItem[]>(
+      "/api/v1/datasources/history",
+      undefined,
+      preview.history,
+      (data: any): T.UploadHistoryItem[] => {
+        const list = Array.isArray(data) ? data : data?.data || [];
+        return list.map((item: any, idx: number) => ({
+          id: item.id ? String(item.id) : (item.upload_id ? String(item.upload_id) : `hist-${idx + 1}`),
+          upload_id: item.upload_id,
+          filename: item.filename || "dataset.csv",
+          detected_type: item.detected_type || item.file_type || "General",
+          file_type: item.file_type,
+          rows: item.rows ?? item.row_count ?? 0,
+          row_count: item.row_count ?? item.rows ?? 0,
+          column_count: item.column_count ?? 0,
+          quality_score: Math.round(item.quality_score ?? 85),
+          status: item.status || "ingested",
+          uploaded_at: item.uploaded_at || new Date().toISOString(),
+          data_coverage: item.data_coverage || "Full Dataset Coverage",
+          last_processed_at: item.last_processed_at || item.uploaded_at,
+          impact_modules: item.impact_modules || ["Business Analytics", "Forecasting", "Recommendations"],
+        }));
+      }
+    ),
   
   reports: () => request<T.ReportItem[]>("/api/v1/chatbot/report/generate", { method: "POST", body: JSON.stringify({ format: "json", focus_areas: ["sales"] }) }, preview.reports),
   
