@@ -49,7 +49,7 @@ def run_migration():
     if not os.path.exists(sqlite_path):
         raise FileNotFoundError(f"SQLite source file {sqlite_path} does not exist.")
 
-    pg_url = "postgresql+psycopg2://postgres:postgres@localhost:5432/insightdi"
+    pg_url = os.environ.get("DATABASE_URL") or settings.DATABASE_URL or "postgresql+psycopg2://postgres:postgres@localhost:5432/insightdi"
     print("=================================================================")
     print("         INSIGHT-DI SAFE SQLITE -> POSTGRESQL MIGRATION          ")
     print("=================================================================")

@@ -53,3 +53,8 @@ dist/
 # Operating System
 .DS_Store
 Thumbs.db
+
+# Runtime Process & PID tracking
+scripts/.child_pids
+*.pid
+
